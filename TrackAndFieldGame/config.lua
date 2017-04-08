@@ -8,10 +8,10 @@ application =
 	content =
 	{
 		width = 768,
-		height = 1024, 
-		scale = "letterBox",
-		fps = 30,
-		
+		height = 1024,
+		scale = "zoomEasy",
+		fps = 60,
+
 		--[[
 		imageSuffix =
 		{

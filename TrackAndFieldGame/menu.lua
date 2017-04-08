@@ -8,6 +8,13 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+local function gotoGame()
+    composer.gotoScene( "game", { time=800, effect="crossFade" } )
+end
+
+local function gotoTopTimes()
+    composer.gotoScene( "toptimes", { time=800, effect="crossFade" } )
+end
 
 
 
@@ -20,6 +27,32 @@ function scene:create( event )
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
+
+	-- load and display background image
+	local background = display.newImageRect( sceneGroup, "menu_background.png", 1024, 768 )
+	background.x = display.contentCenterX
+	background.y = display.contentCenterY
+
+	-- create and display title
+	local title = display.newText( sceneGroup, "Track & Field", display.contentCenterX, 180, native.systemFont, 80)
+	title:setFillColor(1,1,1)
+
+	-- create and display play button
+	local playButton = display.newText( sceneGroup, "Play", display.contentCenterX, 400, native.systemFont, 44)
+	playButton:setFillColor( 1, 1, 1 )
+
+	-- create and display top times button
+	local topTimesButton = display.newText( sceneGroup, "Top Times", display.contentCenterX, 500, native.systemFont, 44)
+
+	-- event listeners for play and times buttons
+	playButton:addEventListener( "tap", gotoGame )
+	topTimesButton:addEventListener( "tap", gotoTopTimes )
+
+	-- create music track
+	local backgroundMusicTrack = audio.loadStream( "Just Move.mp3")
+
+	-- start background music
+	audio.play( backgroundMusicTrack, { channel=1, loops=-1 } )
 
 end
 
@@ -61,7 +94,7 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+	audio.dispose( backgroundMusicTrack )
 end
 
 
