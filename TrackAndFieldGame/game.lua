@@ -8,6 +8,10 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+local physics = require( "physics" )
+physics.start()
+physics.setGravity( 0, 0 )
+
 ---- set up track tiles
 local trackGraphicsArray =
 {
@@ -334,6 +338,86 @@ local trackAnimateArrayEnd7_1 = {
 	}
 }
 
+local characterAnimateArrayMarkSet = {
+	frames=
+	{
+		--1)mark
+		{
+			x=1,
+			y=2,
+			width=25,
+			height=19
+		},
+		--2) get set
+		{
+			x=30,
+			y=2,
+			width=25,
+			height=19
+		},
+	}
+}
+
+local characterAnimateArrayRun = {
+	frames=
+	{
+		--1)
+		{
+			x=40,
+			y=1,
+			width=14,
+			height=32
+		},
+		--2)
+		{
+			x=56,
+			y=1,
+			width=16,
+			height=32
+		},
+		--3)
+		{
+			x=22,
+			y=1,
+			width=12,
+			height=32
+		},
+		--4)
+		{
+			x=137,
+			y=1,
+			width=15,
+			height=32
+		},
+		--5)
+		{
+			x=109,
+			y=1,
+			width=21,
+			height=32
+		},
+		--6)
+		{
+			x=22,
+			y=1,
+			width=12,
+			height=32
+		},
+	}
+}
+
+local characterAnimateArrayPreRace = {
+	frames=
+	{
+		{
+			x=2,
+			y=1,
+			width = 9,
+			height = 32,
+		},
+	}
+}
+
 
 -- establish graphics sheets
 local trackSheet = graphics.newImageSheet( "NES - Track & Field - Tile Set.png", trackGraphicsArray )
@@ -346,6 +430,9 @@ local trackAnimateSheetStart = graphics.newImageSheet( "NES - Track & Field - Ti
 local trackAnimateSheetReg = graphics.newImageSheet( "NES - Track & Field - Tile Set.png", trackAnimateArrayReg )
 local trackFinishLineAnimateSheet1 = graphics.newImageSheet( "finishline.png", trackAnimateArrayEnd6)
 local trackFinishLineAnimateSheet2 = graphics.newImageSheet( "finishline.png", trackAnimateArrayEnd7_1)
+local characterSheetPreRace = graphics.newImageSheet( "player-running.png", characterAnimateArrayPreRace)
+local characterAnimateSheetMarkSet = graphics.newImageSheet( "player-starting.png", characterAnimateArrayMarkSet)
+local characterAnimateSheetRun = graphics.newImageSheet("player-running.png", characterAnimateArrayRun)
 
 -- set up top of stadium sprite sequence
 local sequence_topOfStadium = {
@@ -476,42 +563,29 @@ local sequence_trackFinishLine7 = {
 	}
 }
 
--- table for stadium top animates
-local stadiumAnimateTable = {}
--- table for crowd animates
-local crowdAnimateTable = {}
--- table for front grass animates
-local frontGrassAnimateTable= {}
--- table for back grass animates
-local backGrassAnimateTable= {}
--- table for track animates
-local trackAnimateTable = {}
+local sequence_charMarkSet = {
+	{
+		name = "charMarkSet",
+		start = 1,
+		count = 2,
+		time = 1000,
+		loopCount=1,
+		loopDirection="forward"
+	}
+}
 
--- create stadium top, crowd, front, and back grass sprites and add to table
-local newAnimate
-local i = 0
-while i<8 do
-	newAnimate = display.newSprite(stadiumTopAnimateSheet , sequence_topOfStadium)
-	stadiumAnimateTable[i] = newAnimate
-	newAnimate = display.newSprite(crowdAnimateSheet, sequence_crowd)
-	crowdAnimateTable[i] = newAnimate
-	newAnimate = display.newSprite(frontGrassAnimateSheet, sequence_frontGrass)
-	frontGrassAnimateTable[i] = newAnimate
-	newAnimate = display.newSprite(backGrassAnimateSheet, sequence_backGrass)
-	backGrassAnimateTable[i] = newAnimate
-	-- track sprites
-	-- middle of track gets reg
-	if (i>0 and i<6) then
-		newAnimate = display.newSprite(trackAnimateSheetReg,sequence_trackRegMiddle)
-	elseif (i==0) then
-		newAnimate = display.newSprite(trackAnimateSheetStart, sequence_trackStarting)
-	else
-		newAnimate = display.newSprite(trackAnimateSheetReg, sequence_trackRegFrontEnd)
-	end
-	trackAnimateTable[i] = newAnimate
-	i=i+1
-end
-newAnimate=nil
+local sequence_charRun = {
+	{
+		name = "charRun",
+		start=1,
+		count=6,
+		time=1665,
+		loopCount=6,
+		loopDirection="bounce"
+	}
+}
+
+
 
 -- initialize variables
 local speed = 0
@@ -524,6 +598,63 @@ local swipeDirections
 local backGroup
 local mainGroup
 local uiGroup
+
+-- Set up display groups
+backGroup = display.newGroup()
+mainGroup = display.newGroup()
+uiGroup = display.newGroup()
+
+
+local characterStanding
+local characterRunning = display.newSprite(uiGroup, characterAnimateSheetRun, sequence_charRun)
+characterRunning.x=1050
+physics.addBody( characterRunning, "dynamic", { radius=0, bounce=0.0 } )
+
+-- table for stadium top animates
+local stadiumAnimateTable = {}
+-- table for crowd animates
+local crowdAnimateTable = {}
+-- table for front grass animates
+local frontGrassAnimateTable= {}
+-- table for back grass animates
+local backGrassAnimateTable= {}
+-- table for track animates
+local trackAnimateTable = {}
+-- get set char animate
+local charMarkSetAnimate
+
+-- create stadium top, crowd, front, and back grass sprites and add to table
+local newAnimate
+local i = 0
+while i<8 do
+	newAnimate = display.newSprite(mainGroup,stadiumTopAnimateSheet , sequence_topOfStadium)
+	stadiumAnimateTable[i] = newAnimate
+	newAnimate = display.newSprite(mainGroup,crowdAnimateSheet, sequence_crowd)
+	crowdAnimateTable[i] = newAnimate
+	newAnimate = display.newSprite(mainGroup,frontGrassAnimateSheet, sequence_frontGrass)
+	frontGrassAnimateTable[i] = newAnimate
+	newAnimate = display.newSprite(mainGroup,backGrassAnimateSheet, sequence_backGrass)
+	backGrassAnimateTable[i] = newAnimate
+	-- track sprites
+	-- middle of track gets reg
+	if (i>0 and i<6) then
+		newAnimate = display.newSprite(mainGroup,trackAnimateSheetReg,sequence_trackRegMiddle)
+	elseif (i==0) then
+		newAnimate = display.newSprite(mainGroup,trackAnimateSheetStart, sequence_trackStarting)
+	else
+		newAnimate = display.newSprite(mainGroup,trackAnimateSheetReg, sequence_trackRegFrontEnd)
+	end
+	trackAnimateTable[i] = newAnimate
+	i=i+1
+end
+newAnimate=nil
+
+local timeToMove = 10
+local fps = 60
+local numberOfTicks = fps*timeToMove
+local finalDestination = 64+128*7
+local distanceToMove =  finalDestination-304
+local pointsPerTick = distanceToMove/numberOfTicks
 
 local runnningSound
 local crowdSound
@@ -589,6 +720,8 @@ end
 
 
 local function endGame()
+	display.remove( characterStanding )
+	display.remove(backGroup)
 	composer.setVariable( "finalHeatTime", heatTime )
     composer.gotoScene( "toptimes", { time=800, effect="crossFade" } )
 end
@@ -613,6 +746,8 @@ local function endOfRace()
 		frontGrassAnimateTable[i] = nil
 		backGrassAnimateTable[i] = nil
 	end
+	display.remove(uiGroup)
+	display.remove(mainGroup)
 	-- send to top times
 	timer.performWithDelay( 2000, endGame, 1 )
 
@@ -624,18 +759,34 @@ end
 
 local function getSet()
 	officialText.text = "Get Set!"
+	characterStanding.x=1050
+	charMarkSetAnimate = display.newSprite(mainGroup,characterAnimateSheetMarkSet, sequence_charMarkSet)
+	charMarkSetAnimate:scale(4,6.74)
+	charMarkSetAnimate.x=180
+	charMarkSetAnimate.y=486
+	charMarkSetAnimate:play()
+
 end
+
 
 local function go()
 	officialText.text = "GO!"
 	swipeDirections.text = "Swipe repeatedly across screen!"
+	display.remove(charMarkSetAnimate)
+	charMarkSetAnimate=nil
+	characterRunning:scale(7, 4.00)
+	characterRunning.x=176
+	characterRunning.y=486
+	characterRunning:play()
+	characterRunning:setLinearVelocity( (distanceToMove)/timeToMove, 0 )
 end
 
 local function afterStartOfRace()
 	officialText.text = ""
 	--change i=0 track animation
 	display.remove(trackAnimateTable[0])
-	trackAnimateTable[0] = display.newSprite(trackAnimateSheetReg, sequence_trackRegFrontEnd)
+	trackAnimateTable[0]=nil
+	trackAnimateTable[0] = display.newSprite(mainGroup,trackAnimateSheetReg, sequence_trackRegFrontEnd)
 	trackAnimateTable[0]:setFrame(2)
 	trackAnimateTable[0]:scale(9.14, 5.33)
 	trackAnimateTable[0].x=64+128
@@ -646,7 +797,8 @@ end
 local function finishRaceBlock7()
 	-- this happens at 8 seconds for 1 second
 	display.remove( trackAnimateTable[7] )
-	trackAnimateTable[7] = display.newSprite(trackFinishLineAnimateSheet2, sequence_trackFinishLine7)
+	trackAnimateTable[7] = nil
+	trackAnimateTable[7] = display.newSprite(mainGroup,trackFinishLineAnimateSheet2, sequence_trackFinishLine7)
 	trackAnimateTable[7]:scale(5.81,5.33)
 	trackAnimateTable[7].x=64+128*7
 	trackAnimateTable[7].y=510
@@ -658,11 +810,19 @@ local function finishRaceBlock6()
 	-- this happens at 9 seconds
 	display.remove(trackAnimateTable[6])
 	display.remove(trackAnimateTable[7])
-	trackAnimateTable[6] = display.newSprite(trackFinishLineAnimateSheet1, sequence_trackFinishLine6)
+	trackAnimateTable[6] = display.newSprite(mainGroup,trackFinishLineAnimateSheet1, sequence_trackFinishLine6)
 	trackAnimateTable[6]:scale(5.81, 5.33)
 	trackAnimateTable[6].x=64+128*6
 	trackAnimateTable[6].y=510
 	trackAnimateTable[6]:play()
+end
+
+local function finishRaceCharacter()
+	display.remove(characterStanding)
+	display.remove(characterRunning)
+	characterStanding = display.newImageRect(characterSheetPreRace, 1, 64,128)
+	characterStanding.x = 64+128*6
+	characterStanding.y = 486
 end
 
 
@@ -679,16 +839,9 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 	-- pause the audio
 	audio.pause( 1 )
-	-- Set up display groups
-	backGroup = display.newGroup()
 	sceneGroup:insert(backGroup)
-
-	mainGroup = display.newGroup()
 	sceneGroup:insert(mainGroup)
-
-	uiGroup = display.newGroup()
 	sceneGroup:insert(uiGroup)
-
 
 
 	-- Load the background for the race
@@ -762,6 +915,11 @@ function scene:create( event )
 		table.insert(stadiumTop, newStadiumTop)
 	end
 
+	-- Load standing character
+	characterStanding = display.newImageRect(backGroup, characterSheetPreRace, 1, 64,128)
+	characterStanding.x= 176
+	characterStanding.y = 486
+
 	-- Load space for official text
 	officialText = display.newText(uiGroup, "", 900, 344, native.systemFont, 36 )
 	-- Load space for "SWIPE REPEATEDLY ACROSS SCREEN" message
@@ -788,6 +946,7 @@ function scene:show( event )
 		timer.performWithDelay( 5000, afterStartOfRace, 1 )
 		timer.performWithDelay( 11000, finishRaceBlock7, 1)
 		timer.performWithDelay( 12000, finishRaceBlock6, 1)
+		timer.performWithDelay( 13000, finishRaceCharacter, 1 )
 		timer.performWithDelay( 15000, endOfRace, 1)
 	end
 end

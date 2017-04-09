@@ -81,7 +81,7 @@ function scene:create( event )
 	local topTimesHeader = display.newText( sceneGroup, "Top Times", display.contentCenterX, 50, native.systemFont, 50)
 	-- display your time if you had one
 	if(timesTable[11]) then
-		local yourTimeHeader = display.newText(sceneGroup, "Your time: "..timesTable[11], display.contentCenterX, 100, native.systemFont, 44)
+		local yourTimeHeader = display.newText(sceneGroup, "Your time: "..timesTable[11], display.contentCenterX, 115, native.systemFont, 44)
 	end
 
 	-- sort the times
