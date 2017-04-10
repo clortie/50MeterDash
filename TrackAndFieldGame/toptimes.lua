@@ -28,7 +28,7 @@ local function loadTimes()
 	end
 
 	if (timesTable == nil or #timesTable == 0 ) then
-		timesTable = {"19.00s","18.00s","17.00s","16.00s","15.00s","14.00s","13.00s","12.00s","11.00s","10.10s"}
+		timesTable = {8.5001,8.0001,7.5001,7.0001,6.5001,6.0001,5.5001,5.0001,4.5001,4.0001}
 	end
 end
 
@@ -39,7 +39,7 @@ local function saveTimes()
 		table.remove(timesTable,i)
 	end
 
-	local file = io.open(filePath)
+	local file = io.open(filePath, "w")
 
 	if file then
 		file:write(json.encode(timesTable))
@@ -48,7 +48,7 @@ local function saveTimes()
 end
 
 local function gotoMenu()
-	composer.gotoScene( "menu", { time=800, effect="crossFade" } )
+	composer.gotoScene( "menu" , {time=800,effect="crossFade"})
 end
 
 
@@ -65,7 +65,6 @@ function scene:create( event )
 
 	-- Insert the saved time from the last game into the table, then reset it
 	table.insert( timesTable, composer.getVariable("finalHeatTime"))
-	composer.setVariable( "finalHeatTime", "99.99s" )
 
 	-- Sort the table entries from highest to lowest
 	local function compare(a,b)
@@ -106,6 +105,12 @@ function scene:create( event )
     menuButton:setFillColor( 0.75, 0.78, 1 )
     menuButton:addEventListener( "tap", gotoMenu )
 
+	if audio.isChannelPaused( 1 ) then
+		audio.setVolume( 0.0, { channel=1 } )
+		audio.resume( 1 )
+		audio.fade( { channel=1, time=7000, volume=0.4 } )
+	end
+
 end
 
 
@@ -132,10 +137,29 @@ function scene:hide( event )
 	local phase = event.phase
 
 	if ( phase == "will" ) then
+		if ( system.getInfo("platformName") == "Android" ) then
+   			local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
+   			if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
+     		native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
+     		--native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+   		elseif( androidVersion ) then
+     		native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+   		end
+	end
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		display.remove(background)
+		display.remove(title)
+		display.remove(playButton)
+		display.remove(topTimesButton)
+		audio.dispose( backgroundMusicTrack )
+		background=nil
+		title=nil
+		playButton=nil
+		topTimesButton=nil
+		backgroundMusicTrack=nil
 		composer.removeScene( "toptimes" )
 	end
 end

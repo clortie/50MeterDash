@@ -581,19 +581,16 @@ local sequence_charRun = {
 		count=6,
 		time=1665,
 		loopCount=6,
-		loopDirection="bounce"
+		loopDirection="forward"
 	}
 }
 
 
 
 -- initialize variables
-local speed = 0
-local heatTime
-local speedText
-local timerText
 local officialText
 local swipeDirections
+local totalSwiped=0
 
 local backGroup
 local mainGroup
@@ -604,11 +601,17 @@ backGroup = display.newGroup()
 mainGroup = display.newGroup()
 uiGroup = display.newGroup()
 
-
+-- initialze standing character
 local characterStanding
 local characterRunning = display.newSprite(uiGroup, characterAnimateSheetRun, sequence_charRun)
 characterRunning.x=1050
 physics.addBody( characterRunning, "dynamic", { radius=0, bounce=0.0 } )
+
+-- set up swipe area
+local swipeArea = display.newImageRect( uiGroup, "swipe-area.png", display.contentWidth, display.contentHeight )
+swipeArea.x=display.contentCenterX
+swipeArea.y=display.contentCenterY
+physics.addBody( swipeArea, { radius=display.contentWidth, isSensor=true } )
 
 -- table for stadium top animates
 local stadiumAnimateTable = {}
@@ -664,11 +667,15 @@ local gameLoopTimer
 -- Declare top static track
 local topStaticTrack = {}
 
-
-local function endGame()
-	composer.setVariable( "finalHeatTime", heatTime )
-	composer.gotoScene( "toptimes" , {time=800, effect="crossFade"} )
+local function swipe(event)
+	if("ended"==event.phase or "cancelled" ==event.phase)then
+		totalSwiped= totalSwiped + (event.x-event.xStart)
+	end
+	return true -- Prevents touch propagation to underlying objects
 end
+
+
+
 
 local function startOfRace()
 	-- specific set frames for animations
@@ -722,6 +729,7 @@ end
 local function endGame()
 	display.remove( characterStanding )
 	display.remove(backGroup)
+	local heatTime = (99999.0-totalSwiped)/10000.0
 	composer.setVariable( "finalHeatTime", heatTime )
     composer.gotoScene( "toptimes", { time=800, effect="crossFade" } )
 end
@@ -779,6 +787,7 @@ local function go()
 	characterRunning.y=486
 	characterRunning:play()
 	characterRunning:setLinearVelocity( (distanceToMove)/timeToMove, 0 )
+	Runtime:addEventListener( "touch", swipe )
 end
 
 local function afterStartOfRace()
@@ -820,6 +829,8 @@ end
 local function finishRaceCharacter()
 	display.remove(characterStanding)
 	display.remove(characterRunning)
+	display.remove(characterRunning)
+	Runtime:removeEventListener("touch", swipe)
 	characterStanding = display.newImageRect(characterSheetPreRace, 1, 64,128)
 	characterStanding.x = 64+128*6
 	characterStanding.y = 486
@@ -935,6 +946,15 @@ function scene:show( event )
 	local phase = event.phase
 
 	if ( phase == "will" ) then
+		if ( system.getInfo("platformName") == "Android" ) then
+   			local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
+   			if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
+     			native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
+     			--native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+   			elseif( androidVersion ) then
+     			native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+   			end
+		end
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
 	elseif ( phase == "did" ) then
@@ -963,6 +983,57 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		physics.pause()
+		trackGraphicsArray=nil
+		backgroundGraphicsArray=nil
+		stadiumTopAnimateArray=nil
+		crowdAnimateArray=nil
+		frontGrassAnimateArray=nil
+		backGrassAnimateArray=nil
+		trackAnimateArrayReg=nil
+		trackAnimateArrayStart=nil
+		trackAnimateArrayEnd6=nil
+		trackAnimateArrayEnd7_1=nil
+		characterAnimateArrayMarkSet=nil
+		characterAnimateArrayRun=nil
+		characterAnimateArrayPreRace=nil
+		trackSheet=nil
+		backgroundSheet=nil
+		stadiumTopAnimateSheet=nil
+		crowdAnimateSheet=nil
+		backGrassAnimateSheet=nil
+		frontGrassAnimateSheet=nil
+		trackAnimateSheetStart=nil
+		trackAnimateSheetReg=nil
+		trackFinishLineAnimateSheet1=nil
+		trackFinishLineAnimateSheet2=nil
+		characterSheetPreRace=nil
+		characterAnimateSheetMarkSet=nil
+		characterAnimateSheetRun=nil
+		sequence_topOfStadium=nil
+		sequence_crowd=nil
+		sequence_frontGrass=nil
+		sequence_backGrass=nil
+		sequence_trackStarting=nil
+		sequence_trackRegMiddle=nil
+		sequence_trackRegFrontEnd=nil
+		sequence_trackFinishLine6=nil
+		sequence_trackFinishLine7=nil
+		sequence_charMarkSet=nil
+		sequence_charRun=nil
+		backGroup=nil
+		mainGroup=nil
+		uiGroup=nil
+		characterStanding=nil
+		characterRunning=nil
+		swipeArea=nil
+		stadiumAnimateTable=nil
+		crowdAnimateTable=nil
+		frontGrassAnimateTable=nil
+		backGrassAnimateTable=nil
+		trackAnimateTable=nil
+		charMarkSetAnimate=nil
+		topStaticTrack=nil
 		composer.removeScene( "game" )
 	end
 end

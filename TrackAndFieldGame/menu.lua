@@ -3,6 +3,8 @@ local composer = require( "composer" )
 
 local scene = composer.newScene()
 
+native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -48,10 +50,12 @@ function scene:create( event )
 	playButton:addEventListener( "tap", gotoGame )
 	topTimesButton:addEventListener( "tap", gotoTopTimes )
 
+	audio.reserveChannels( 1 )
 	-- create music track
 	local backgroundMusicTrack = audio.loadStream( "Just Move.mp3")
 
 	-- start background music
+	audio.setVolume( 0.4 ,{ channel=1 } )
 	audio.play( backgroundMusicTrack, { channel=1, loops=-1 } )
 
 end
@@ -64,7 +68,15 @@ function scene:show( event )
 	local phase = event.phase
 
 	if ( phase == "will" ) then
-		-- Code here runs when the scene is still off screen (but is about to come on screen)
+		if ( system.getInfo("platformName") == "Android" ) then
+		   local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
+		   if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
+		     native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
+		     --native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+		   elseif( androidVersion ) then
+		     native.setProperty( "androidSystemUiVisibility", "lowProfile" )
+		   end
+		end		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
@@ -84,6 +96,16 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		display.remove(background)
+		display.remove(title)
+		display.remove(playButton)
+		display.remove(topTimesButton)
+		audio.dispose(backgroundMusicTrack)
+		backgroundMusicTrack=nil
+		background=nil
+		title=nil
+		playButton=nil
+		topTimesButton=nil
 
 	end
 end
