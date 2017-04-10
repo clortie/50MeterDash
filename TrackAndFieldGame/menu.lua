@@ -3,12 +3,11 @@ local composer = require( "composer" )
 
 local scene = composer.newScene()
 
-native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
-
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
+-- scene change functions
 
 local function gotoGame()
     composer.gotoScene( "game", { time=800, effect="crossFade" } )
@@ -69,6 +68,7 @@ function scene:show( event )
 
 	if ( phase == "will" ) then
 		if ( system.getInfo("platformName") == "Android" ) then
+			-- hide android nav bar
 		   local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
 		   if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
 		     native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
@@ -76,11 +76,7 @@ function scene:show( event )
 		   elseif( androidVersion ) then
 		     native.setProperty( "androidSystemUiVisibility", "lowProfile" )
 		   end
-		end		-- Code here runs when the scene is still off screen (but is about to come on screen)
-
-	elseif ( phase == "did" ) then
-		-- Code here runs when the scene is entirely on screen
-
+		end
 	end
 end
 
@@ -90,12 +86,9 @@ function scene:hide( event )
 
 	local sceneGroup = self.view
 	local phase = event.phase
-
-	if ( phase == "will" ) then
-		-- Code here runs when the scene is on screen (but is about to go off screen)
-
-	elseif ( phase == "did" ) then
+	if ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		-- free up memory and prepare for garbage collection
 		display.remove(background)
 		display.remove(title)
 		display.remove(playButton)
@@ -106,7 +99,6 @@ function scene:hide( event )
 		title=nil
 		playButton=nil
 		topTimesButton=nil
-
 	end
 end
 

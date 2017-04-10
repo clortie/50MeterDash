@@ -8,8 +8,10 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+-- need physics to move character sprite
 local physics = require( "physics" )
 physics.start()
+-- no gravity to affect him
 physics.setGravity( 0, 0 )
 
 ---- set up track tiles
@@ -219,6 +221,7 @@ local crowdAnimateArray =
 	}
 }
 
+-- frames for front grass animation
 local frontGrassAnimateArray = {
 	frames =
 	{
@@ -239,6 +242,7 @@ local frontGrassAnimateArray = {
 	}
 }
 
+-- frames for back grass animation
 local backGrassAnimateArray = {
 	frames =
 	{
@@ -260,8 +264,8 @@ local backGrassAnimateArray = {
 	}
 }
 
--- for i=1,2,3,4,5 for 10 sec
--- for i=0 for 8 sec after initial animation
+
+-- frames for track animation
 local trackAnimateArrayReg = {
 	frames =
 	{
@@ -282,7 +286,7 @@ local trackAnimateArrayReg = {
 	}
 }
 
--- for i=0 for 2 sec at beginning
+-- frames for moving the starting blocks off screen
 local trackAnimateArrayStart = {
 	frames =
 	{
@@ -293,7 +297,7 @@ local trackAnimateArrayStart = {
 			width=36,
 			height=24
 		},
-		--2) marker?? whichever is immediately ahead of it in animation
+		--2) marker
 		{
 			x=72,
 			y=17,
@@ -303,8 +307,7 @@ local trackAnimateArrayStart = {
 	}
 }
 
-
--- for i=6 do frames {1,3} for i=7 do frames {1,2} over two seconds
+-- frames for block six at end of race
 local trackAnimateArrayEnd6 = {
 	frames =
 	{
@@ -325,6 +328,7 @@ local trackAnimateArrayEnd6 = {
 	}
 }
 
+-- frames for block 7 at end of race
 local trackAnimateArrayEnd7_1 = {
 	frames =
 	{
@@ -338,6 +342,7 @@ local trackAnimateArrayEnd7_1 = {
 	}
 }
 
+-- frames for character during "mark" and "set"
 local characterAnimateArrayMarkSet = {
 	frames=
 	{
@@ -358,6 +363,7 @@ local characterAnimateArrayMarkSet = {
 	}
 }
 
+-- frames for character during race
 local characterAnimateArrayRun = {
 	frames=
 	{
@@ -406,6 +412,7 @@ local characterAnimateArrayRun = {
 	}
 }
 
+-- frames for character standing before race
 local characterAnimateArrayPreRace = {
 	frames=
 	{
@@ -453,66 +460,53 @@ local sequence_topOfStadium = {
 
 -- set up crowd animate sprite sequence
 local sequence_crowd = {
-    -- consecutive frames sequence
     {
         name = "crowdAnimate",
-		-- number of frames
         start = 1,
         count = 2,
-		-- time to loop through all frames in ms
         time = 400,
-		-- how many times to run it (0 means indefinite)
         loopCount = 30,
-		-- forward means circular, bounce means reverse at end
         loopDirection = "forward"
     }
 }
 
+-- front grass animate sequence
 local sequence_frontGrass = {
-	--consecutive frames sequence
 	{
 		name = "frontGrassAnimate",
-		-- number of frames
 		start=1,
 		count=2,
-		--time to loop through all frames in ms
 		time = 400,
-		--how many times to run it
 		loopCount=30,
 		loopDirection="forward"
 	}
 }
 
+-- back grass animate sequence
 local sequence_backGrass = {
-	--consecutive frames sequence
 	{
 		name = "backGrassAnimate",
-		-- number of frames
 		start=1,
 		count=2,
-		--time to loop through all frames in ms
 		time = 400,
-		--how many times to run it
 		loopCount=30,
 		loopDirection="forward"
 	}
 }
 
--- set up intial track animate sprite sequences
+-- starting block animate sequence
 local sequence_trackStarting = {
-	-- consecute frames sequence
 	{
 		name = "startingBlocksAnimate",
-		--number of frames
 		start = 1,
 		count = 2,
-		--time to loop through all frames in ms
 		time = 2000,
-		--how many time to run it
 		loopCount = 1,
 		loopDirection = "forward"
 	}
 }
+
+-- regular track animate sequence
 local sequence_trackRegMiddle = {
 	--consecutive frames sequence
 	{
@@ -526,21 +520,20 @@ local sequence_trackRegMiddle = {
 		loopDirection = "forward"
 	}
 }
+
+-- shorter reg track animate for starting and ending blocks
 local sequence_trackRegFrontEnd = {
-	--consecutive frames sequence
 	{
 		name = "regularTrackAnimateFrontEnd",
-		--number of frames
 		start = 1,
 		count = 2,
-		--time to looop through all frames in ms
 		time = 2000,
 		loopCount = 4,
 		loopDirection = "forward"
 	}
 }
 
-
+-- finish line sequence for block 6
 local sequence_trackFinishLine6 = {
 	{
 		name = "finishLine6",
@@ -552,6 +545,7 @@ local sequence_trackFinishLine6 = {
 	}
 }
 
+-- finish line sequence for block 7
 local sequence_trackFinishLine7 = {
 	{
 		name = "finishLine7",
@@ -563,6 +557,7 @@ local sequence_trackFinishLine7 = {
 	}
 }
 
+-- character sequence for mark and set
 local sequence_charMarkSet = {
 	{
 		name = "charMarkSet",
@@ -574,6 +569,7 @@ local sequence_charMarkSet = {
 	}
 }
 
+-- character run sequence
 local sequence_charRun = {
 	{
 		name = "charRun",
@@ -585,13 +581,12 @@ local sequence_charRun = {
 	}
 }
 
-
-
 -- initialize variables
 local officialText
 local swipeDirections
 local totalSwiped=0
 
+-- display groups
 local backGroup
 local mainGroup
 local uiGroup
@@ -601,17 +596,13 @@ backGroup = display.newGroup()
 mainGroup = display.newGroup()
 uiGroup = display.newGroup()
 
--- initialze standing character
+-- character variables
 local characterStanding
 local characterRunning = display.newSprite(uiGroup, characterAnimateSheetRun, sequence_charRun)
+-- set this off screen for now
 characterRunning.x=1050
+-- add physics
 physics.addBody( characterRunning, "dynamic", { radius=0, bounce=0.0 } )
-
--- set up swipe area
-local swipeArea = display.newImageRect( uiGroup, "swipe-area.png", display.contentWidth, display.contentHeight )
-swipeArea.x=display.contentCenterX
-swipeArea.y=display.contentCenterY
-physics.addBody( swipeArea, { radius=display.contentWidth, isSensor=true } )
 
 -- table for stadium top animates
 local stadiumAnimateTable = {}
@@ -652,6 +643,7 @@ while i<8 do
 end
 newAnimate=nil
 
+-- for times and velocity calculations
 local timeToMove = 10
 local fps = 60
 local numberOfTicks = fps*timeToMove
@@ -659,14 +651,10 @@ local finalDestination = 64+128*7
 local distanceToMove =  finalDestination-304
 local pointsPerTick = distanceToMove/numberOfTicks
 
-local runnningSound
-local crowdSound
-local gunSound
-
-local gameLoopTimer
 -- Declare top static track
 local topStaticTrack = {}
 
+-- function to track swiping
 local function swipe(event)
 	if("ended"==event.phase or "cancelled" ==event.phase)then
 		totalSwiped= totalSwiped + (event.x-event.xStart)
@@ -674,9 +662,7 @@ local function swipe(event)
 	return true -- Prevents touch propagation to underlying objects
 end
 
-
-
-
+-- set up start of race sequences
 local function startOfRace()
 	-- specific set frames for animations
 	for i=0,7 do
@@ -725,7 +711,7 @@ local function startOfRace()
 	end
 end
 
-
+-- end of game procedures
 local function endGame()
 	display.remove( characterStanding )
 	display.remove(backGroup)
@@ -734,6 +720,7 @@ local function endGame()
     composer.gotoScene( "toptimes", { time=800, effect="crossFade" } )
 end
 
+-- end of race procedures
 local function endOfRace()
 	-- replace starting block spot with reg track spot
 	display.remove(topStaticTrack[1])
@@ -756,15 +743,16 @@ local function endOfRace()
 	end
 	display.remove(uiGroup)
 	display.remove(mainGroup)
-	-- send to top times
+	-- end the game
 	timer.performWithDelay( 2000, endGame, 1 )
-
 end
 
+-- change the offical text
 local function onYourMark()
 	officialText.text = "On Your Mark!"
 end
 
+-- change official text, set up new char animate
 local function getSet()
 	officialText.text = "Get Set!"
 	characterStanding.x=1050
@@ -773,10 +761,9 @@ local function getSet()
 	charMarkSetAnimate.x=180
 	charMarkSetAnimate.y=486
 	charMarkSetAnimate:play()
-
 end
 
-
+-- change official text, start swipe listener, start char animate, move char
 local function go()
 	officialText.text = "GO!"
 	swipeDirections.text = "Swipe repeatedly across screen!"
@@ -790,6 +777,7 @@ local function go()
 	Runtime:addEventListener( "touch", swipe )
 end
 
+-- reset text, change first track block
 local function afterStartOfRace()
 	officialText.text = ""
 	--change i=0 track animation
@@ -803,6 +791,7 @@ local function afterStartOfRace()
 	trackAnimateTable[0]:play()
 end
 
+-- change last track block
 local function finishRaceBlock7()
 	-- this happens at 8 seconds for 1 second
 	display.remove( trackAnimateTable[7] )
@@ -815,6 +804,7 @@ local function finishRaceBlock7()
 
 end
 
+--change 6th track block
 local function finishRaceBlock6()
 	-- this happens at 9 seconds
 	display.remove(trackAnimateTable[6])
@@ -826,6 +816,7 @@ local function finishRaceBlock6()
 	trackAnimateTable[6]:play()
 end
 
+-- change character animation
 local function finishRaceCharacter()
 	display.remove(characterStanding)
 	display.remove(characterRunning)
@@ -835,9 +826,6 @@ local function finishRaceCharacter()
 	characterStanding.x = 64+128*6
 	characterStanding.y = 486
 end
-
-
-
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -862,7 +850,6 @@ function scene:create( event )
 
 	-- Load static front grass
 	local staticFrontGrass = display.newImageRect(backGroup, backgroundSheet, 2, 1024, 170)
-
 	staticFrontGrass.x = display.contentCenterX
 	staticFrontGrass.y = display.contentHeight-85
 
@@ -935,9 +922,7 @@ function scene:create( event )
 	officialText = display.newText(uiGroup, "", 900, 344, native.systemFont, 36 )
 	-- Load space for "SWIPE REPEATEDLY ACROSS SCREEN" message
 	swipeDirections = display.newText(uiGroup, "", display.contentCenterX, 100, native.systemFont, 44)
-
 end
-
 
 -- show()
 function scene:show( event )
@@ -947,6 +932,7 @@ function scene:show( event )
 
 	if ( phase == "will" ) then
 		if ( system.getInfo("platformName") == "Android" ) then
+			-- hide nav bar for android
    			local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
    			if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
      			native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
@@ -959,6 +945,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
+		-- do the game
 		timer.performWithDelay( 1000, onYourMark, 1 )
 		timer.performWithDelay( 2000, getSet, 1 )
 		timer.performWithDelay( 3000, go, 1 )
@@ -978,11 +965,9 @@ function scene:hide( event )
 	local sceneGroup = self.view
 	local phase = event.phase
 
-	if ( phase == "will" ) then
-		-- Code here runs when the scene is on screen (but is about to go off screen)
-
-	elseif ( phase == "did" ) then
+	if ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		-- clear variables for trash collection
 		physics.pause()
 		trackGraphicsArray=nil
 		backgroundGraphicsArray=nil

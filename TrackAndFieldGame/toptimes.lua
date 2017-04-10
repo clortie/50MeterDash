@@ -18,15 +18,15 @@ local filePath = system.pathForFile( "times.json", system.DocumentsDirectory)
 
 -- load the times from the file, or make the times if there are none
 local function loadTimes()
-
+	-- open file with read permission
 	local file = io.open( filePath, "r")
-
 	if file then
+		--read file
 		local contents = file:read("*a")
 		io.close( file)
 		timesTable = json.decode(contents)
 	end
-
+	-- if table is empty after file read, then fill table with default values
 	if (timesTable == nil or #timesTable == 0 ) then
 		timesTable = {8.5001,8.0001,7.5001,7.0001,6.5001,6.0001,5.5001,5.0001,4.5001,4.0001}
 	end
@@ -34,19 +34,20 @@ end
 
 -- save the times to the table
 local function saveTimes()
-
+	--remove 11th entry
 	for i = #timesTable, 11, -1 do
 		table.remove(timesTable,i)
 	end
-
+	-- open file with write permission
 	local file = io.open(filePath, "w")
-
 	if file then
+		-- write to file
 		file:write(json.encode(timesTable))
 		io.close(file)
 	end
 end
 
+-- go to menu scene
 local function gotoMenu()
 	composer.gotoScene( "menu" , {time=800,effect="crossFade"})
 end
@@ -113,6 +114,7 @@ function scene:create( event )
     menuButton:setFillColor( 0.75, 0.78, 1 )
     menuButton:addEventListener( "tap", gotoMenu )
 
+	-- restore audio if it was paused to play the game
 	if audio.isChannelPaused( 1 ) then
 		audio.setVolume( 0.0, { channel=1 } )
 		audio.resume( 1 )
@@ -128,13 +130,6 @@ function scene:show( event )
 	local sceneGroup = self.view
 	local phase = event.phase
 
-	if ( phase == "will" ) then
-		-- Code here runs when the scene is still off screen (but is about to come on screen)
-
-	elseif ( phase == "did" ) then
-		-- Code here runs when the scene is entirely on screen
-
-	end
 end
 
 
@@ -145,6 +140,7 @@ function scene:hide( event )
 	local phase = event.phase
 
 	if ( phase == "will" ) then
+		-- hide android nav bar
 		if ( system.getInfo("platformName") == "Android" ) then
    			local androidVersion = string.sub( system.getInfo( "platformVersion" ), 1, 3)
    			if( androidVersion and tonumber(androidVersion) >= 4.4 ) then
@@ -158,6 +154,7 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
+		-- free memory and empty vars for garbage collection
 		display.remove(background)
 		display.remove(title)
 		display.remove(playButton)
