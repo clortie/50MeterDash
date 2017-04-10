@@ -63,8 +63,16 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 	loadTimes()
 
-	-- Insert the saved time from the last game into the table, then reset it
-	table.insert( timesTable, composer.getVariable("finalHeatTime"))
+	-- Insert the saved time from the last game into the table if it isn't there already
+	local alreadyHasTime=false
+	for i=#timesTable, 1,-1 do
+		if timesTable[i]==composer.getVariable( "finalHeatTime" ) then
+			alreadyHasTime=true
+		end
+	end
+	if (not alreadyHasTime) then
+		table.insert( timesTable, composer.getVariable("finalHeatTime"))
+	end
 
 	-- Sort the table entries from highest to lowest
 	local function compare(a,b)
